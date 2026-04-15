@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<title>無限節奏尖刺（完整版）</title>
+
+<style>
+body {
+  margin: 0;
+  overflow: hidden;
+  background: black;
+}
+
+#player {
+  width: 40px;
+  height: 40px;
+  background: cyan;
+  position: absolute;
+  left: 100px;
+  bottom: 60px;
+}
+
+.ob {
+  width: 0;
+  height: 0;
+  border-left: 18px solid transparent;
+  border-right: 18px solid transparent;
+  border-bottom: 35px solid red;
+  position: absolute;
+  bottom: 60px;
+}
+</style>
+</head>
+
+<body>
+
+<div id="player"></div>
+
+<script>
+let player = document.getElementById("player");
+
+let y = 60;
+let v = 0;
+
+let dead = false;
+let canJump = true;
+
+let speed = 6;
+let spawnDelay = 1500;
+
+// 👆 跳（禁止連跳）
+document.addEventListener("click", () => {
+  if (dead) return restart();
+
+  if (canJump) {
+    v = 15;
+    canJump = false;
+  }
+});
+
+// 🔺 生成尖刺
+function spawn() {
+  if (dead) return;
+
+  let o = document.createElement("div");
+  o.className = "ob";
+  document.body.appendChild(o);
+
+  let x = window.innerWidth;
+
+  function move() {
+    if (dead) return;
+
+    x -= speed;
+    o.style.left = x + "px";
+
+    let p = player.getBoundingClientRect();
+    let b = o.getBoundingClientRect();
+
+    if (
+      p.right > b.left &&
+      p.left < b.right &&
+      p.bottom > b.top
+    ) {
+      dead = true;
+    }
+
+    if (x < -50) {
+      o.remove();
+    } else {
+      requestAnimationFrame(move);
+    }
+  }
+
+  move();
+}
+
+// 🔥 無限關卡（越來越難）
+function levelLoop() {
+  if (dead) return;
+
+  spawn();
+
+  speed += 0.01;
+  spawnDelay -= 5;
+
+  if (spawnDelay < 400) spawnDelay = 400;
+
+  setTimeout(levelLoop, spawnDelay);
+}
+
+// 🔄 重生
+function restart() {
+  dead = false;
+  y = 60;
+  v = 0;
+  canJump = true;
+
+  speed = 6;
+  spawnDelay = 1500;
+
+  document.querySelectorAll(".ob").forEach(e => e.remove());
+
+  levelLoop();
+}
+
+// 🎮 物理（跳躍 + 落地解鎖）
+function loop() {
+  if (!dead) {
+    v -= 0.8;
+    y += v;
+
+    if (y <= 60) {
+      y = 60;
+      canJump = true; // ✅ 落地才能再跳
+    }
+
+    player.style.bottom = y + "px";
+  }
+
+  requestAnimationFrame(loop);
+}
+
+levelLoop();
+loop();
+</script>
+
+</body>
+</html>
